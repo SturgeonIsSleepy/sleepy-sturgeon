@@ -150,30 +150,47 @@ export default function F1Dashboard(){
   const winnerByCircuit=useMemo(()=>Object.fromEntries(lastWinners.map((race)=>[race.Circuit.circuitId,race.Results[0]])),[lastWinners]);
   const pageIndex=nav.findIndex((item)=>item.id===view);
 
-  useEffect(()=>{
-    if(!mounted||!contentRef.current)return;
-    const frame=requestAnimationFrame(()=>{
-      for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
-        if(!target||!contentRef.current)continue;
-        const clone=contentRef.current.cloneNode(true) as HTMLDivElement;
-        clone.setAttribute("aria-hidden","true");
-        clone.querySelectorAll("[id]").forEach((element)=>element.removeAttribute("id"));
-        clone.querySelectorAll("a,button,[tabindex]").forEach((element)=>element.setAttribute("tabindex","-1"));
-        target.replaceChildren(clone);
-      }
-    });
-    return()=>cancelAnimationFrame(frame);
-  },[mounted,races,drivers,constructors,results,lastWinners,progress,status,updated,selectedRound]);
+  const syncRefractedGeometry=useCallback(()=>{
+    const source=contentRef.current;
+    if(!source)return;
+    const sourceRect=source.getBoundingClientRect();
+    const sourceScrollers=Array.from(source.querySelectorAll<HTMLElement>(".chart-scroll"));
+    for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
+      const host=target?.parentElement;
+      if(!target||!host)continue;
+      const hostRect=host.getBoundingClientRect();
+      target.style.width=sourceRect.width+"px";
+      target.style.height=source.scrollHeight+"px";
+      target.style.transform="translate3d("+(sourceRect.left-hostRect.left)+"px,"+(sourceRect.top-hostRect.top)+"px,0)";
+      const mirrors=target.querySelectorAll<HTMLElement>(".chart-scroll");
+      sourceScrollers.forEach((scroller,index)=>{
+        if(mirrors[index]){
+          mirrors[index].scrollLeft=scroller.scrollLeft;
+          mirrors[index].scrollTop=scroller.scrollTop;
+        }
+      });
+    }
+  },[]);
+
+  const rebuildRefractedContent=useCallback(()=>{
+    const source=contentRef.current;
+    if(!source)return;
+    for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
+      if(!target)continue;
+      const clone=source.cloneNode(true) as HTMLDivElement;
+      clone.setAttribute("aria-hidden","true");
+      clone.querySelectorAll("[id]").forEach((element)=>element.removeAttribute("id"));
+      clone.querySelectorAll("a,button,[tabindex]").forEach((element)=>element.setAttribute("tabindex","-1"));
+      target.replaceChildren(clone);
+    }
+    requestAnimationFrame(syncRefractedGeometry);
+  },[syncRefractedGeometry]);
 
   useEffect(()=>{
-    const frame=requestAnimationFrame(()=>{
-      const transform=`translate3d(-${pageIndex*33.333333}%,0,0)`;
-      for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
-        target?.querySelectorAll<HTMLElement>(".f1-context-track,.f1-slider-track").forEach((track)=>{track.style.transform=transform;});
-      }
-    });
+    if(!mounted)return;
+    const frame=requestAnimationFrame(rebuildRefractedContent);
     return()=>cancelAnimationFrame(frame);
-  },[pageIndex]);
+  },[mounted,races,drivers,constructors,results,lastWinners,progress,status,updated,selectedRound,pageIndex,rebuildRefractedContent]);
 
   useEffect(()=>{
     const source=contentRef.current;
@@ -181,33 +198,47 @@ export default function F1Dashboard(){
     let frame=0;
     const refresh=()=>{
       cancelAnimationFrame(frame);
-      frame=requestAnimationFrame(()=>{
-        for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
-          if(!target)continue;
-          const clone=source.cloneNode(true) as HTMLDivElement;
-          clone.setAttribute("aria-hidden","true");
-          clone.querySelectorAll("[id]").forEach((element)=>element.removeAttribute("id"));
-          clone.querySelectorAll("a,button,[tabindex]").forEach((element)=>element.setAttribute("tabindex","-1"));
-          target.replaceChildren(clone);
-        }
-      });
+      frame=requestAnimationFrame(rebuildRefractedContent);
     };
-    const observer=new MutationObserver(refresh);
-    observer.observe(source,{subtree:true,childList:true,attributes:true,attributeFilter:["data-active","data-hidden","style"]});
-    return()=>{observer.disconnect();cancelAnimationFrame(frame);};
-  },[mounted]);
+    const mutations=new MutationObserver(refresh);
+    mutations.observe(source,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["open","class","data-active","data-hidden","style"]});
+    const sizes=new ResizeObserver(refresh);
+    sizes.observe(source);
+    source.querySelectorAll("img,svg,.race-group,.points-chart").forEach((element)=>sizes.observe(element));
+    addEventListener("resize",refresh);
+    return()=>{
+      mutations.disconnect();
+      sizes.disconnect();
+      removeEventListener("resize",refresh);
+      cancelAnimationFrame(frame);
+    };
+  },[mounted,rebuildRefractedContent]);
+
+  useEffect(()=>{
+    let frame=0;
+    const started=performance.now();
+    const tick=()=>{
+      syncRefractedGeometry();
+      if(dockMoving||performance.now()-started<900)frame=requestAnimationFrame(tick);
+    };
+    tick();
+    return()=>cancelAnimationFrame(frame);
+  },[dockMoving,pageIndex,syncRefractedGeometry]);
 
   const syncRefractedScroll=(event:React.UIEvent<HTMLDivElement>)=>{
     const source=event.target as HTMLElement;
-    if(!source.matches(".chart-scroll")||!contentRef.current)return;
-    const sourceIndex=Array.from(contentRef.current.querySelectorAll<HTMLElement>(".chart-scroll")).indexOf(source);
-    if(sourceIndex<0)return;
+    if(!source.matches(".chart-scroll"))return;
     for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
-      const mirror=target?.querySelectorAll<HTMLElement>(".chart-scroll")[sourceIndex];
-      if(mirror)mirror.scrollLeft=source.scrollLeft;
+      const sources=contentRef.current?.querySelectorAll<HTMLElement>(".chart-scroll");
+      const index=sources?Array.from(sources).indexOf(source):-1;
+      const mirror=index>=0?target?.querySelectorAll<HTMLElement>(".chart-scroll")[index]:undefined;
+      if(mirror){
+        mirror.scrollLeft=source.scrollLeft;
+        mirror.scrollTop=source.scrollTop;
+      }
     }
+    syncRefractedGeometry();
   };
-
   const moveBackdrop=(event:React.PointerEvent<HTMLElement>)=>{
     if(matchMedia("(prefers-reduced-motion: reduce)").matches||!rootRef.current)return;
     const x=(event.clientX/innerWidth-.5)*18,y=(event.clientY/innerHeight-.5)*12;
@@ -224,6 +255,7 @@ export default function F1Dashboard(){
     scrollFrame.current=requestAnimationFrame(()=>{
       rootRef.current?.style.setProperty("--f1-scroll-y",`${Math.max(-64,-top*.085).toFixed(2)}px`);
       rootRef.current?.style.setProperty("--f1-scroll-top",`${top.toFixed(2)}px`);
+      syncRefractedGeometry();
     });
   };
   const RaceRow=({race,state}:{race:Race;state:"done"|"future"})=>{
