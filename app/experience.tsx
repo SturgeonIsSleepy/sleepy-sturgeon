@@ -61,12 +61,31 @@ function ToolsSection() {
 function LogsPanel() {
   const history = [
     {
-      id: "2026-09-12-interface-pass.md",
-      label: "2026-09-12-interface-pass.md",
+      id: "2026-09-12-glass-sync.md",
+      label: "2026-09-12-glass-sync.md",
       live: true,
       lines: [
-        <><span className="md-hash">#</span> Sleepy Sturgeon / interface pass</>,
+        <><span className="md-hash">#</span> Sleepy Sturgeon / interaction and glass sync</>,
         <span className="md-muted">LIVE · __TIME__</span>,
+        <span>&nbsp;</span>,
+        <><span className="md-hash">##</span> Current build</>,
+        <><span className="md-bullet">-</span> Home navigation now uses <span className="md-string">continuous gesture tracking</span> across content, scene and Dock.</>,
+        <><span className="md-bullet">-</span> Mobile layouts were tightened for outlined titles, logs and championship standings.</>,
+        <><span className="md-bullet">-</span> F1 Calendar, Standings and Race Data use local visitor time and responsive full-season data.</>,
+        <><span className="md-bullet">-</span> F1 Dock clones now preserve source layout during expanded calendars and chart transitions.</>,
+        <><span className="md-bullet">-</span> Liquid glass keeps the <span className="md-code">34px</span> SDF + Snell refractive edge.</>,
+        <><span className="md-bullet">-</span> Mainland China visits receive an availability notice before entering.</>,
+        <span>&nbsp;</span>,
+        <><span className="md-quote">&gt;</span> Production build verified · Cloudflare deployment active.</>,
+      ],
+    },
+    {
+      id: "2026-09-12-interface-pass.md",
+      label: "2026-09-12-interface-pass.md",
+      live: false,
+      lines: [
+        <><span className="md-hash">#</span> Sleepy Sturgeon / interface pass</>,
+        <span className="md-muted">ARCHIVED · SEP 12, 2026</span>,
         <span>&nbsp;</span>,
         <><span className="md-hash">##</span> Current progress</>,
         <><span className="md-bullet">-</span> Home gestures: <span className="md-string">direct content tracking</span> + delayed scene motion.</>,
