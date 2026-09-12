@@ -162,6 +162,14 @@ export default function F1Dashboard(){
       target.style.width=sourceRect.width+"px";
       target.style.height=source.scrollHeight+"px";
       target.style.transform="translate3d("+(sourceRect.left-hostRect.left)+"px,"+(sourceRect.top-hostRect.top)+"px,0)";
+      const tracks=source.querySelectorAll<HTMLElement>(".f1-context-track,.f1-slider-track");
+      const mirrorTracks=target.querySelectorAll<HTMLElement>(".f1-context-track,.f1-slider-track");
+      tracks.forEach((track,index)=>{
+        if(mirrorTracks[index]){
+          mirrorTracks[index].style.transition="none";
+          mirrorTracks[index].style.transform=getComputedStyle(track).transform;
+        }
+      });
       const mirrors=target.querySelectorAll<HTMLElement>(".chart-scroll");
       sourceScrollers.forEach((scroller,index)=>{
         if(mirrors[index]){
@@ -183,7 +191,7 @@ export default function F1Dashboard(){
       clone.querySelectorAll("a,button,[tabindex]").forEach((element)=>element.setAttribute("tabindex","-1"));
       target.replaceChildren(clone);
     }
-    requestAnimationFrame(syncRefractedGeometry);
+    syncRefractedGeometry();
   },[syncRefractedGeometry]);
 
   useEffect(()=>{
