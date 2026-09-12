@@ -292,6 +292,8 @@ export default function Experience() {
   const [dragging, setDragging] = useState(false);
   const navLock = useRef(0);
   const touchStart = useRef<number | null>(null);
+  const touchOffset = useRef(0);
+  const releaseFrame = useRef(0);
   const pointerFrame = useRef(0);
   const dragFrame = useRef(0);
   useLiquidGlass({ dock: dockRef, map: mapRef, spec: specRef, displacement: displacementRef });
@@ -354,7 +356,12 @@ export default function Experience() {
       data-dragging={dragging || undefined}
       onPointerMove={onPointerMove}
       onWheel={(event) => { if (Math.abs(event.deltaY) > 18) step(event.deltaY > 0 ? 1 : -1); }}
-      onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientY ?? null; setDragging(true); }}
+      onTouchStart={(event) => {
+        cancelAnimationFrame(releaseFrame.current);
+        touchStart.current = event.touches[0]?.clientY ?? null;
+        touchOffset.current = 0;
+        setDragging(true);
+      }}
       onTouchMove={(event) => {
         if (touchStart.current === null || !rootRef.current) return;
         const current = event.touches[0]?.clientY ?? touchStart.current;
@@ -362,18 +369,33 @@ export default function Experience() {
         const index = sections.indexOf(active);
         if ((index === 0 && offset > 0) || (index === sections.length - 1 && offset < 0)) offset *= .24;
         offset = Math.max(-innerHeight * .42, Math.min(innerHeight * .42, offset));
+        touchOffset.current = offset;
         cancelAnimationFrame(dragFrame.current);
         dragFrame.current = requestAnimationFrame(() => rootRef.current?.style.setProperty("--drag-y", `${offset}px`));
       }}
       onTouchEnd={(event) => {
         if (touchStart.current === null) return;
         const delta = touchStart.current - (event.changedTouches[0]?.clientY ?? touchStart.current);
-        rootRef.current?.style.setProperty("--drag-y", "0px");
-        setDragging(false);
-        if (Math.abs(delta) > Math.min(90, innerHeight * .12)) step(delta > 0 ? 1 : -1);
+        const index = sections.indexOf(active);
+        const direction = delta > 0 ? 1 : -1;
+        const nextIndex = Math.max(0, Math.min(sections.length - 1, index + direction));
+        const changesPage = Math.abs(delta) > Math.min(90, innerHeight * .12) && nextIndex !== index;
+        if (changesPage && rootRef.current) {
+          rootRef.current.style.setProperty("--drag-y", `${touchOffset.current + direction * innerHeight}px`);
+          navLock.current = performance.now();
+          navigate(sections[nextIndex]);
+        }
         touchStart.current = null;
+        releaseFrame.current = requestAnimationFrame(() => {
+          setDragging(false);
+          releaseFrame.current = requestAnimationFrame(() => rootRef.current?.style.setProperty("--drag-y", "0px"));
+        });
       }}
-      onTouchCancel={() => { touchStart.current = null; rootRef.current?.style.setProperty("--drag-y", "0px"); setDragging(false); }}
+      onTouchCancel={() => {
+        touchStart.current = null;
+        setDragging(false);
+        releaseFrame.current = requestAnimationFrame(() => rootRef.current?.style.setProperty("--drag-y", "0px"));
+      }}
     >
       <div className="scene-source" aria-hidden="true"><OceanBackdrop /></div>
       <div className="fish-wrap" aria-hidden="true"><img src="/sturgeon-hero.png" alt="" /></div>
