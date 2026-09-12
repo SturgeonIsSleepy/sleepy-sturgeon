@@ -175,6 +175,39 @@ export default function F1Dashboard(){
     return()=>cancelAnimationFrame(frame);
   },[pageIndex]);
 
+  useEffect(()=>{
+    const source=contentRef.current;
+    if(!mounted||!source)return;
+    let frame=0;
+    const refresh=()=>{
+      cancelAnimationFrame(frame);
+      frame=requestAnimationFrame(()=>{
+        for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
+          if(!target)continue;
+          const clone=source.cloneNode(true) as HTMLDivElement;
+          clone.setAttribute("aria-hidden","true");
+          clone.querySelectorAll("[id]").forEach((element)=>element.removeAttribute("id"));
+          clone.querySelectorAll("a,button,[tabindex]").forEach((element)=>element.setAttribute("tabindex","-1"));
+          target.replaceChildren(clone);
+        }
+      });
+    };
+    const observer=new MutationObserver(refresh);
+    observer.observe(source,{subtree:true,childList:true,attributes:true,attributeFilter:["data-active","data-hidden","style"]});
+    return()=>{observer.disconnect();cancelAnimationFrame(frame);};
+  },[mounted]);
+
+  const syncRefractedScroll=(event:React.UIEvent<HTMLDivElement>)=>{
+    const source=event.target as HTMLElement;
+    if(!source.matches(".chart-scroll")||!contentRef.current)return;
+    const sourceIndex=Array.from(contentRef.current.querySelectorAll<HTMLElement>(".chart-scroll")).indexOf(source);
+    if(sourceIndex<0)return;
+    for(const target of [dockContentCloneRef.current,selectorContentCloneRef.current]){
+      const mirror=target?.querySelectorAll<HTMLElement>(".chart-scroll")[sourceIndex];
+      if(mirror)mirror.scrollLeft=source.scrollLeft;
+    }
+  };
+
   const moveBackdrop=(event:React.PointerEvent<HTMLElement>)=>{
     if(matchMedia("(prefers-reduced-motion: reduce)").matches||!rootRef.current)return;
     const x=(event.clientX/innerWidth-.5)*18,y=(event.clientY/innerHeight-.5)*12;
@@ -204,7 +237,7 @@ export default function F1Dashboard(){
     <div className="f1-backdrop" aria-hidden="true"/><div className="f1-scan" aria-hidden="true"/><div className="f1-bottom-fade" aria-hidden="true"/>
     <a className="f1-home-button" href="/#home"><span className="f1-home-button__content"><img src="/sturgeon-hero.png" alt=""/>BACK HOME</span></a>
 
-    <div ref={contentRef} className="f1-refractable-content">
+    <div ref={contentRef} className="f1-refractable-content" onScrollCapture={syncRefractedScroll}>
     <div className="f1-context-window"><div className="f1-context-track" style={{transform:`translate3d(-${pageIndex*33.333333}%,0,0)`}}>
       <header className="f1-context f1-context-calendar"><p>PS C:\TOOLS\F1&gt; Get-NextWeekend</p>{nextRace&&<><div><span>NEXT / ROUND {nextRace.round}</span><h1>{nextRace.raceName}</h1><strong>{nextRace.Circuit.Location.locality} · {localTime(nextRace.date,nextRace.time)}</strong></div><SessionCards race={nextRace} compact/></>}</header>
       <header className="f1-context f1-context-standings"><p>PS C:\TOOLS\F1&gt; Get-ChampionshipLeaders</p><div className="leader-board"><section><span>DRIVERS / TOP 3</span>{drivers.slice(0,3).map((driver,index)=><div key={driver.Driver.driverId}><b>0{index+1}</b><strong>{driverName(driver)}</strong><em>{driver.points} PTS</em></div>)}</section><section><span>TEAMS / TOP 3</span>{constructors.slice(0,3).map((team,index)=><div key={team.Constructor.constructorId}><b>0{index+1}</b><strong style={{color:teamColors[team.Constructor.name]}}>{team.Constructor.name}</strong><em>{team.points} PTS</em></div>)}</section></div></header>

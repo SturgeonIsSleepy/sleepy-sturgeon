@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 
 const sections = ["home", "tools", "tests", "logs"] as const;
 type Section = (typeof sections)[number];
@@ -290,7 +290,7 @@ export default function Experience() {
   const selectorDisplacementRef = useRef<SVGFEDisplacementMapElement>(null);
   const [selectorMoving, setSelectorMoving] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
+  const [dragProgress, setDragProgress] = useState(0);
   const navLock = useRef(0);
   const touchStart = useRef<number | null>(null);
   const pointerFrame = useRef(0);
@@ -348,17 +348,24 @@ export default function Experience() {
     });
   };
 
+  const pageProgress = Math.max(0, Math.min(sections.length - 1, sections.indexOf(active) - dragProgress));
+  const motionStyle = {
+    "--page-progress": pageProgress,
+    "--scene-y": String(pageProgress * -25) + "dvh",
+  } as CSSProperties;
+
   return (
     <main
       ref={rootRef}
       className={`experience is-${active}`}
       data-dragging={dragging || undefined}
+      style={motionStyle}
       onPointerMove={onPointerMove}
       onWheel={(event) => { if (Math.abs(event.deltaY) > 18) step(event.deltaY > 0 ? 1 : -1); }}
       onTouchStart={(event) => {
         cancelAnimationFrame(dragFrame.current);
         touchStart.current = event.touches[0]?.clientY ?? null;
-        setDragOffset(0);
+        setDragProgress(0);
         setDragging(true);
       }}
       onTouchMove={(event) => {
@@ -369,10 +376,11 @@ export default function Experience() {
         if ((index === 0 && offset > 0) || (index === sections.length - 1 && offset < 0)) offset *= .24;
         offset = Math.max(-innerHeight * .42, Math.min(innerHeight * .42, offset));
         cancelAnimationFrame(dragFrame.current);
-        dragFrame.current = requestAnimationFrame(() => setDragOffset(offset));
+        dragFrame.current = requestAnimationFrame(() => setDragProgress(offset / innerHeight));
       }}
       onTouchEnd={(event) => {
         if (touchStart.current === null) return;
+        cancelAnimationFrame(dragFrame.current);
         const delta = touchStart.current - (event.changedTouches[0]?.clientY ?? touchStart.current);
         const index = sections.indexOf(active);
         const direction = delta > 0 ? 1 : -1;
@@ -384,12 +392,13 @@ export default function Experience() {
         }
         touchStart.current = null;
         setDragging(false);
-        setDragOffset(0);
+        setDragProgress(0);
       }}
       onTouchCancel={() => {
+        cancelAnimationFrame(dragFrame.current);
         touchStart.current = null;
         setDragging(false);
-        setDragOffset(0);
+        setDragProgress(0);
       }}
     >
       <div className="scene-source" aria-hidden="true"><OceanBackdrop /></div>
@@ -397,7 +406,7 @@ export default function Experience() {
       <div className="depth-mark" aria-hidden="true"><span>SS / {String(sections.indexOf(active)).padStart(2, "0")}</span><i /></div>
       <nav className="section-rail" aria-label="Section navigation">{sections.map((item) => <button type="button" key={item} className={active === item ? "active" : ""} aria-label={`Go to ${item}`} aria-current={active === item ? "page" : undefined} onClick={() => navigate(item)} />)}</nav>
 
-      <div className="section-stage" style={{ transform: `translate3d(0, calc(-${sections.indexOf(active) * 100}dvh + ${dragOffset}px), 0)` }}>
+      <div className="section-stage" style={{ transform: "translate3d(0, calc(var(--page-progress) * -100dvh), 0)" }}>
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="hero-kicker">PERSONAL SYSTEM · EST. 2026</p>
@@ -418,9 +427,9 @@ export default function Experience() {
           <div
             ref={selectorRef}
             className="dock-selector"
-            data-visible={active !== "home" || undefined}
-            data-moving={selectorMoving || undefined}
-            style={{ transform: `translate3d(${Math.max(0, navItems.findIndex((item) => item.id === active)) * 100}%, 0, 0)` }}
+            data-visible={pageProgress > .08 || undefined}
+            data-moving={selectorMoving || dragging || undefined}
+            style={{ transform: "translate3d(" + Math.max(0, pageProgress - 1) * 100 + "%, 0, 0)" }}
             aria-hidden="true"
           >
             <div className="dock-selector__refraction"><div className="dock-scene-clone"><OceanBackdrop /></div></div>
