@@ -290,10 +290,9 @@ export default function Experience() {
   const selectorDisplacementRef = useRef<SVGFEDisplacementMapElement>(null);
   const [selectorMoving, setSelectorMoving] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
   const navLock = useRef(0);
   const touchStart = useRef<number | null>(null);
-  const touchOffset = useRef(0);
-  const releaseFrame = useRef(0);
   const pointerFrame = useRef(0);
   const dragFrame = useRef(0);
   useLiquidGlass({ dock: dockRef, map: mapRef, spec: specRef, displacement: displacementRef });
@@ -357,9 +356,9 @@ export default function Experience() {
       onPointerMove={onPointerMove}
       onWheel={(event) => { if (Math.abs(event.deltaY) > 18) step(event.deltaY > 0 ? 1 : -1); }}
       onTouchStart={(event) => {
-        cancelAnimationFrame(releaseFrame.current);
+        cancelAnimationFrame(dragFrame.current);
         touchStart.current = event.touches[0]?.clientY ?? null;
-        touchOffset.current = 0;
+        setDragOffset(0);
         setDragging(true);
       }}
       onTouchMove={(event) => {
@@ -369,9 +368,8 @@ export default function Experience() {
         const index = sections.indexOf(active);
         if ((index === 0 && offset > 0) || (index === sections.length - 1 && offset < 0)) offset *= .24;
         offset = Math.max(-innerHeight * .42, Math.min(innerHeight * .42, offset));
-        touchOffset.current = offset;
         cancelAnimationFrame(dragFrame.current);
-        dragFrame.current = requestAnimationFrame(() => rootRef.current?.style.setProperty("--drag-y", `${offset}px`));
+        dragFrame.current = requestAnimationFrame(() => setDragOffset(offset));
       }}
       onTouchEnd={(event) => {
         if (touchStart.current === null) return;
@@ -380,21 +378,18 @@ export default function Experience() {
         const direction = delta > 0 ? 1 : -1;
         const nextIndex = Math.max(0, Math.min(sections.length - 1, index + direction));
         const changesPage = Math.abs(delta) > Math.min(90, innerHeight * .12) && nextIndex !== index;
-        if (changesPage && rootRef.current) {
-          rootRef.current.style.setProperty("--drag-y", `${touchOffset.current + direction * innerHeight}px`);
+        if (changesPage) {
           navLock.current = performance.now();
           navigate(sections[nextIndex]);
         }
         touchStart.current = null;
-        releaseFrame.current = requestAnimationFrame(() => {
-          setDragging(false);
-          releaseFrame.current = requestAnimationFrame(() => rootRef.current?.style.setProperty("--drag-y", "0px"));
-        });
+        setDragging(false);
+        setDragOffset(0);
       }}
       onTouchCancel={() => {
         touchStart.current = null;
         setDragging(false);
-        releaseFrame.current = requestAnimationFrame(() => rootRef.current?.style.setProperty("--drag-y", "0px"));
+        setDragOffset(0);
       }}
     >
       <div className="scene-source" aria-hidden="true"><OceanBackdrop /></div>
@@ -402,7 +397,7 @@ export default function Experience() {
       <div className="depth-mark" aria-hidden="true"><span>SS / {String(sections.indexOf(active)).padStart(2, "0")}</span><i /></div>
       <nav className="section-rail" aria-label="Section navigation">{sections.map((item) => <button type="button" key={item} className={active === item ? "active" : ""} aria-label={`Go to ${item}`} aria-current={active === item ? "page" : undefined} onClick={() => navigate(item)} />)}</nav>
 
-      <div className="section-stage" style={{ transform: `translate3d(0, calc(-${sections.indexOf(active) * 100}dvh + var(--drag-y, 0px)), 0)` }}>
+      <div className="section-stage" style={{ transform: `translate3d(0, calc(-${sections.indexOf(active) * 100}dvh + ${dragOffset}px), 0)` }}>
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="hero-kicker">PERSONAL SYSTEM · EST. 2026</p>

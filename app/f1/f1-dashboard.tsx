@@ -57,7 +57,7 @@ const nav:{id:View;label:string;icon:ReactNode}[] = [
 
 const readView=():View=>typeof window!=="undefined"&&["calendar","standings","next"].includes(location.hash.slice(1))?location.hash.slice(1) as View:"calendar";
 const asDate=(date:string,time?:string)=>new Date(`${date}T${time||"00:00:00Z"}`);
-const localTime=(date:string,time?:string)=>new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric",weekday:"short",hour:time?"2-digit":undefined,minute:time?"2-digit":undefined,timeZoneName:time?"short":undefined}).format(asDate(date,time));
+const localTime=(date:string,time?:string)=>new Intl.DateTimeFormat("en-GB",{month:"short",day:"numeric",weekday:"short",hour:time?"2-digit":undefined,minute:time?"2-digit":undefined,timeZoneName:time?"short":undefined}).format(asDate(date,time));
 const driverName=(driver:DriverStanding)=>`${driver.Driver.givenName} ${driver.Driver.familyName}`;
 const sessions=(race:Race):[string,Session][]=>[["FP1",race.FirstPractice],["FP2",race.SecondPractice],["FP3",race.ThirdPractice],["SPRINT",race.Sprint],["SPRINT Q",race.SprintQualifying],["QUALIFYING",race.Qualifying],["RACE",{date:race.date,time:race.time}]].filter((item):item is [string,Session]=>Boolean(item[1]));
 

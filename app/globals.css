@@ -40,7 +40,7 @@ button, [tabindex] { -webkit-tap-highlight-color: transparent; }
 .hero-kicker, .section-index { position: relative; z-index: 3; margin: 0 0 1.2rem; color: var(--cyan); font: 600 clamp(.72rem, .8vw, .85rem)/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .18em; }
 .hero h1 { position: relative; z-index: 1; margin: 0; font-size: clamp(4.2rem, 11vw, 11.2rem); line-height: .76; font-weight: 740; letter-spacing: -.085em; text-transform: uppercase; text-shadow: 0 2px 50px rgb(13 221 255 / 6%); }
 .hero h1 span { display: block; }
-.hero h1 span:last-child { margin-left: 14vw; color: transparent; -webkit-text-stroke: 2px rgb(231 248 255 / 82%); filter: drop-shadow(0 0 1px rgb(235 250 255 / 70%)); }
+.hero h1 span:last-child { margin-left: 14vw; color: transparent; -webkit-text-stroke: 2px rgb(231 248 255 / 82%); filter: drop-shadow(0 0 1px rgb(235 250 255 / 70%)); letter-spacing: -.045em; }
 .hero-subtitle { position: relative; z-index: 3; margin: clamp(2.2rem, 5vh, 4rem) 0 0 14.5vw; color: rgb(225 244 255 / 76%); font-size: clamp(1rem, 1.35vw, 1.25rem); letter-spacing: .28em; text-shadow: 0 2px 12px rgb(0 5 20 / 85%); }
 .fish-wrap { position: fixed; z-index: 3; left: 0; top: 0; width: min(48vw, 780px); filter: drop-shadow(0 32px 40px rgb(0 0 20 / 52%)) drop-shadow(0 0 26px rgb(27 222 255 / 18%)); transform: translate3d(calc(52vw - 18% + var(--pointer-x) * -18px), calc(62vh + var(--pointer-y) * -12px), 0) scale(1) rotate(0); transform-origin: 18% 50%; transition: transform 1050ms cubic-bezier(.16,.82,.19,1), opacity 500ms ease, filter 800ms ease; animation: fish-float 6.8s ease-in-out infinite; will-change: transform; }
 .fish-wrap img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
@@ -298,4 +298,11 @@ button, [tabindex] { -webkit-tap-highlight-color: transparent; }
   .f1-dock .f1-backdrop--clone,.f1-dock-selector .f1-backdrop--clone{filter:blur(1.25px) brightness(.46) contrast(.54) saturate(.68)}
   .f1-dock .f1-content-clone,.f1-dock-selector .f1-content-clone{filter:blur(.8px) brightness(.4) contrast(.48);opacity:.72}
   .f1-dock__surface{background:linear-gradient(180deg,rgb(5 7 11 / 32%),rgb(2 3 6 / 52%))}
+}
+
+@media(max-width:620px){
+  .hero h1 span:last-child{letter-spacing:-.035em}
+  .chart-scroll{overflow-x:visible}
+  .points-chart svg{width:100%;min-width:0}
+  .points-chart svg text{font-size:8px}
 }
