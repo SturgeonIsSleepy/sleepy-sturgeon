@@ -306,3 +306,9 @@ button, [tabindex] { -webkit-tap-highlight-color: transparent; }
   .points-chart svg{width:100%;min-width:0}
   .points-chart svg text{font-size:8px}
 }
+.mainland-warning{border:1px solid rgb(255 255 255 / 16%);background:#080b12;color:#f3f8ff;box-shadow:0 30px 90px rgb(0 0 0 / 70%);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.mainland-warning__eyebrow{color:#ff526b;font-size:.72rem;letter-spacing:.14em}
+.mainland-warning [data-slot="dialog-title"]{font-family:Inter,"Segoe UI",sans-serif;font-size:clamp(1.5rem,5vw,2.4rem);line-height:1.05}
+.mainland-warning [data-slot="dialog-description"]{color:rgb(235 244 255 / 68%);font-size:.88rem;line-height:1.7}
+.mainland-warning__continue{min-height:44px;padding:0 18px;border:1px solid rgb(111 243 155 / 44%);color:#ecfff3;background:rgb(35 112 66 / 24%);font:700 .76rem ui-monospace,monospace;letter-spacing:.08em;cursor:pointer}
+.mainland-warning__continue:hover,.mainland-warning__continue:focus-visible{border-color:#6ff39b;background:rgb(35 112 66 / 38%);outline:none}

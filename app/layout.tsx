@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import MainlandWarning from "./mainland-warning";
 
 export const metadata: Metadata = {
   title: "Sleepy Sturgeon",
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark notranslate" translate="no">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased"><MainlandWarning />{children}</body>
     </html>
   );
 }
